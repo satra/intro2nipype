@@ -1,8 +1,7 @@
-During this why & how you will learn the basics of Python
-for scientific computing. I will explain how Python
-can be used as a simple calculator and also how to use it to
-do linear algebra and plots for publication ready figures.
-Python is free and comes will very efficient libraries for
-numerical computation making it a serious alternative to
-matlab. If time permits I will demo some neat features of Python
-like parallel computing, interactive debugging and code testing.
+During this why, what & how you will learn the basics of Nipype for brain
+imaging analysis. I will explain how Nipype can be used as a simple library and
+also how to use it to do analyses of real world projects. Nipype is a Python
+based framework and comes with extensive brain imaging software support and
+workflow creation and execution support making it a serious alternative to
+bash scripting/matlab scripting and GUIs. If time permits I will demo some neat
+features of Nipype like distributed computing.
