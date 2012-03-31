@@ -388,6 +388,10 @@ section table, section table thead, section table tbody{
   margin: auto;
 }
 
+section table, section table td{
+    border: 0px;
+}
+
 section table tr {
   padding-left: 15px;
   padding-right: 15px;

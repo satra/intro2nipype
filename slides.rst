@@ -48,15 +48,10 @@ Why Nipype?
 Brain imaging: the process
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-From design to databases
+From design to databases [1]_
 
 .. image:: images/EDC.png
    :scale: 75%
-
-Poline J, Breeze JL, Ghosh SS, Gorgolewski K, Halchenko YO, Hanke M, Helmer KG,
-Marcus DS, Poldrack RA, Schwartz Y, Ashburner J and Kennedy DN (2012). Data
-sharing in neuroimaging research. Front. Neuroinform. 6:9.
-http://dx.doi.org/10.3389/fninf.2012.00009
 
 ----
 
@@ -113,19 +108,19 @@ developer:
 Many workflow systems out there
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- BioImage Suite [http://www.bioimagesuite.org/]
-- BIRN Tools [https://wiki.birncommunity.org/x/LgFrAQ]
-- BrainVisa [http://brainvisa.info/]
-- CambaFX [http://www-bmu.psychiatry.cam.ac.uk/software/]
-- JIST for MIPAV [http://www.nitrc.org/projects/jist/]
-- LONI pipeline http://pipeline.loni.ucla.edu
-- MEVIS Lab [http://www.mevislab.de/]
-- PSOM [http://code.google.com/p/psom/]
+- `BioImage Suite <http://www.bioimagesuite.org/>`_
+- `BIRN Tools <https://wiki.birncommunity.org/x/LgFrAQ>`_
+- `BrainVisa <http://brainvisa.info/>`_
+- `CambaFX <http://www-bmu.psychiatry.cam.ac.uk/software/>`_
+- `JIST for MIPAV <http://www.nitrc.org/projects/jist/>`_
+- `LONI pipeline <http://pipeline.loni.ucla.edu>`_
+- `MEVIS Lab <http://www.mevislab.de/>`_
+- `PSOM <http://code.google.com/p/psom/>`_
 
 ----
 
 Solution requirements
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 Coming at it from a developer's perspective, we needed something
 
@@ -138,8 +133,35 @@ Coming at it from a developer's perspective, we needed something
 
 ----
 
-So we built Nipype in Python
-----------------------------
+Existing technologies
+~~~~~~~~~~~~~~~~~~~~~
+
+**shell scripting**:
+
+  Can be quick to do, and powerful, but application specific scalability, and
+  not easy to port across different architectures.
+
+**make/CMake**:
+
+  Similar in concept to workflow execution in Nipype, but again limited by the
+  need for command line tools and flexibility in terms of scaling across
+  hardware architectures (although see `makeflow <http://nd.edu/~ccl/software/makeflow/>`_).
+
+**Octave/MATLAB**:
+
+  Integration with other tools is *ad hoc* (i.e., system call) and dataflow is
+  managed at a programmatic level. However, see PSOM_ which offers a very nice
+  alternative to some aspects of Nipype for Octave/Matlab users.
+
+**Graphical options**: (e.g., `LONI pipeline`_)
+
+  Adding or reusing components across different projects require XML
+  manipulation or subscribing to some specific databases.
+
+----
+
+We built Nipype in Python
+-------------------------
 
 ----
 
@@ -215,7 +237,7 @@ Nipype architecture
 * Executable Plugins
 
 .. image:: images/arch.png
-   :scale: 50%
+   :scale: 60%
 
 ----
 
@@ -236,7 +258,7 @@ Semantics
 Software interfaces
 ~~~~~~~~~~~~~~~~~~~
 
-currently supported (4-2-2012)
+Currently supported (4-2-2012). `Click here for latest <http://www.mit.edu/~satra/nipype-nightly/documentation.html>`_
 
 .. list-table::
 
@@ -263,13 +285,44 @@ currently supported (4-2-2012)
 
 ----
 
-How can I use Nipype?
----------------------
+Workflows
+~~~~~~~~~
+
+.. list-table::
+
+  *  - Properties:
+
+       - processing pipeline is a directed acyclic graph (DAG)
+       - nodes are processes
+       - edges represent data flow
+       - compact represenation for any process
+       - code and data separation
+
+     - .. image:: images/workflow.png
 
 ----
 
-In this section
-~~~~~~~~~~~~~~~
+Execution Plugins
+~~~~~~~~~~~~~~~~~
+
+* allows seamless execution across many architectures
+
+  - local
+
+    - serially
+    - multicore
+
+  - Clusters
+
+    - Condor
+    - PBS/Torque
+    - SGE
+    - SSH (via IPython)
+
+----
+
+How can I use Nipype?
+---------------------
 
 - Environment and installing
 
@@ -280,9 +333,9 @@ In this section
 - Contributing to Nipype
 
 Presenter Notes
-+++++++++++++++
+~~~~~~~~~~~~~~~
 
-- caching
+- imperative style caching
 - Workflow concepts
 - Hello World! of workflows
 - Grabbing and Sinking
@@ -290,23 +343,73 @@ Presenter Notes
 - Distributed computing
 - The `Function` interface
 - Config options
+- Debugging
+- actual workflows (resting, task, diffusion)
 
 ----
 
 Installing and environment
---------------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Start the **Ipython** shell (from terminal or Windows cmd shell):
+Scientific Python:
 
-.. sourcecode:: bash
+* Debian/Ubuntu/Scientific Fedora
+* Enthought Python Distribution (`EPD <http://www.enthought.com/products/epd.php>`_)
 
-    $ ipython -pylab
+Installing Nipype:
 
-Getting a scientific-Python environment:
+* Available from `@NeuroDebian <http://neuro.debian.net/pkgs/python-nipype.html>`_,
+  `@PyPI <http://pypi.python.org/pypi/nipype/>`_, and
+  `@GitHub <http://github.com/nipy/nipype>`_
 
-* Comes with every Linux distribution
-* Python(x,y) on Windows: http://www.pythonxy.com
-* EPD: http://www.enthought.com/products/epd.php
+* Dependencies: networkx, nibabel, numpy, scipy, traits
+
+Running Nipype (`Quickstart <http://nipy.org/nipype/quickstart.html>`_):
+
+* Ensure tools are installed and accessible
+* Nipype is a wrapper, not a substitute for AFNI, ANTS, FreeSurfer, FSL, SPM,
+  NiPy, etc.,.
+
+----
+
+For today's tutorial
+~~~~~~~~~~~~~~~~~~~~
+
+when you type:
+
+    .. sourcecode:: bash
+
+        $ module add nipype-tutorial
+        $ cd $TUTORIAL_DIR
+        $ ipython notebook --pylab=inline
+
+it does the following:
+
+    .. sourcecode:: bash
+
+        source /software/python/EPD/virtualenvs/7.2/nipype0.5/bin/activate
+        export TUTORIAL_DIR=/mindhive/scratch/$LOGIN/nipype-tutorial
+        mkdir -p $TUTORIAL_DIR
+        cd $TUTORIAL_DIR
+        ln -s /mindhive/xnat/data/nki_test_retest nki
+        ln -s /mindhive/xnat/data/openfmri/ds107 ds107
+        ln -s /mindhive/xnat/surfaces/tutorial surfaces
+        module add torque
+
+----
+
+Tutorial data
+~~~~~~~~~~~~~
+
+* `OpenfMRI test-retest data <http://openfmri.org/dataset/ds000107>`_
+
+    - subj id1
+    - subj id2
+
+* `NKI Test-Retest data <http://fcon_1000.projects.nitrc.org/indi/pro/eNKI_RS_TRT/FrontPage.html>`_
+
+    - subj id1
+    - subj id2
 
 ----
 
@@ -338,3 +441,12 @@ Hello world!
 --------------------------------------------------------------------------------
 
 
+----
+
+References
+----------
+
+.. [1] Poline J, Breeze JL, Ghosh SS, Gorgolewski K, Halchenko YO, Hanke M,
+  Helmer KG, Marcus DS, Poldrack RA, Schwartz Y, Ashburner J and Kennedy DN
+  (2012). Data sharing in neuroimaging research. Front. Neuroinform. 6:9.
+  http://dx.doi.org/10.3389/fninf.2012.00009
