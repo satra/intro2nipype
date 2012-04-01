@@ -2071,8 +2071,9 @@ caching and other goodies (e.g., pseudo-sandbox)</li>
             <header><h2>Execution Plugins</h2></header>
             
             
-            <section><ul class="simple">
-<li>allows seamless execution across many architectures<ul>
+            <section><p>Allows seamless execution across many architectures</p>
+<blockquote>
+<ul class="simple">
 <li>local<ul>
 <li>serially</li>
 <li>multicore</li>
@@ -2086,8 +2087,7 @@ caching and other goodies (e.g., pseudo-sandbox)</li>
 </ul>
 </li>
 </ul>
-</li>
-</ul></section>
+</blockquote></section>
             
           </div>
           <div class="presenter_notes">
@@ -2214,23 +2214,26 @@ NiPy, etc.,.</li>
             <header><h2>For today's tutorial</h2></header>
             
             
-            <section><p>when you type:</p>
-<blockquote>
-<pre><span class="nv">$ </span>module add nipype-tutorial
-<span class="nv">$ </span><span class="nb">cd</span> <span class="nv">$TUTORIAL_DIR</span>
-<span class="nv">$ </span>ipython notebook --pylab<span class="o">=</span>inline
-</pre>
-</blockquote>
-<p>it does the following:</p>
+            <section><p>At MIT you can configure your environment as:</p>
 <blockquote>
 <pre><span class="nb">source</span> /software/python/EPD/virtualenvs/7.2/nipype0.5/bin/activate
-<span class="nb">export </span><span class="nv">TUTORIAL_DIR</span><span class="o">=</span>/mindhive/scratch/<span class="nv">$LOGIN</span>/nipype-tutorial
-mkdir -p <span class="nv">$TUTORIAL_DIR</span>
-<span class="nb">cd</span> <span class="nv">$TUTORIAL_DIR</span>
+<span class="nb">export </span><span class="nv">TUT_DIR</span><span class="o">=</span>/mindhive/scratch/mri_class/<span class="nv">$LOGNAME</span>/nipype-tutorial
+mkdir -p <span class="nv">$TUT_DIR</span>
+<span class="nb">cd</span> <span class="nv">$TUT_DIR</span>
 ln -s /mindhive/xnat/data/nki_test_retest nki
 ln -s /mindhive/xnat/data/openfmri/ds107 ds107
-ln -s /mindhive/xnat/surfaces/tutorial surfaces
+ln -s /mindhive/xnat/surfaces/nki_test_retest nki_surfaces
+ln -s /mindhive/xnat/surfaces/openfmri/ds107 ds107_surfaces
 module add torque
+<span class="nb">export </span><span class="nv">ANTSPATH</span><span class="o">=</span>/software/ANTS/versions/120325/bin/
+<span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span>/software/common/bin:<span class="nv">$ANTSPATH</span>:<span class="nv">$PATH</span>
+. fss 5.1.0
+. /etc/fsl/4.1/fsl.sh
+</pre>
+</blockquote>
+<p>For our interactive session we will use IPython:</p>
+<blockquote>
+<pre>ipython notebook --pylab<span class="o">=</span>inline
 </pre>
 </blockquote></section>
             
@@ -2259,25 +2262,27 @@ module add torque
         <div class="slide">
           <div class="inner">
             
-            <header><h2>Tutorial data</h2></header>
+            <header><h2>Tutorial data and subject ids</h2></header>
             
             
             <section><ul>
 <li><p class="first"><a class="reference external" href="http://openfmri.org/dataset/ds000107">OpenfMRI test-retest data</a></p>
 <blockquote>
 <ul class="simple">
-<li>subj id1</li>
-<li>subj id2</li>
+<li>sub001</li>
+<li>sub049</li>
 </ul>
 </blockquote>
 </li>
 <li><p class="first"><a class="reference external" href="http://fcon_1000.projects.nitrc.org/indi/pro/eNKI_RS_TRT/FrontPage.html">NKI Test-Retest data</a></p>
 <blockquote>
 <ul class="simple">
-<li>subj id1</li>
-<li>subj id2</li>
+<li>2475376</li>
+<li>0021006</li>
 </ul>
 </blockquote>
+</li>
+<li><p class="first">Surfaces reconstructed with FreeSurfer 5.1 without editing</p>
 </li>
 </ul></section>
             
@@ -2296,6 +2301,48 @@ module add torque
             
             <aside class="page_number">
               27/30
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: slides.rst -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Hello nipype!</h1></header>
+            
+            
+            <section><ul class="simple">
+<li>Nipype as a library</li>
+<li>Imperative programming with caching</li>
+<li>Workflow concepts</li>
+<li>Hello World! of workflows</li>
+<li>Data grabbing and sinking</li>
+<li>Loops: iterables and iterfields</li>
+<li>The <cite>Function</cite> interface</li>
+<li>Config options</li>
+<li>Debugging</li>
+<li>Distributed computing</li>
+<li>Actual workflows: preprocessing</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="slides.rst">slides.rst</a>
+            </aside>
+            
+            <aside class="page_number">
+              28/30
             </aside>
           </footer>
         </div>
@@ -2337,34 +2384,6 @@ module add torque
             </aside>
             
             <aside class="page_number">
-              28/30
-            </aside>
-          </footer>
-        </div>
-      </div>
-      
-      <!-- slide source: slides.rst -->
-      <div class="slide-wrapper">
-        <div class="slide">
-          <div class="inner">
-            
-            <header><h1>Hello world!</h1></header>
-            
-            
-          </div>
-          <div class="presenter_notes">
-            <header><h1>Presenter Notes</h1></header>
-            <section>
-            
-            </section>
-          </div>
-          <footer>
-            
-            <aside class="source">
-              Source: <a href="slides.rst">slides.rst</a>
-            </aside>
-            
-            <aside class="page_number">
               29/30
             </aside>
           </footer>
@@ -2383,9 +2402,9 @@ module add torque
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
 <tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>Poline J, Breeze JL, Ghosh SS, Gorgolewski K, Halchenko YO, Hanke M,
-Helmer KG, Marcus DS, Poldrack RA, Schwartz Y, Ashburner J and Kennedy DN
-(2012). Data sharing in neuroimaging research. Front. Neuroinform. 6:9.
-<a class="reference external" href="http://dx.doi.org/10.3389/fninf.2012.00009">http://dx.doi.org/10.3389/fninf.2012.00009</a></td></tr>
+Haselgrove, C, Helmer KG, Marcus DS, Poldrack RA, Schwartz Y, Ashburner J and
+Kennedy DN (2012). Data sharing in neuroimaging research. Front. Neuroinform.
+6:9. <a class="reference external" href="http://dx.doi.org/10.3389/fninf.2012.00009">http://dx.doi.org/10.3389/fninf.2012.00009</a></td></tr>
 </tbody>
 </table></section>
             
@@ -2562,21 +2581,23 @@ Helmer KG, Marcus DS, Poldrack RA, Schwartz Y, Ashburner J and Kennedy DN
         </tr>
         
         <tr id="toc-row-27" class="sub">
-          <th><a href="#slide27">Tutorial data</a></th>
+          <th><a href="#slide27">Tutorial data and subject ids</a></th>
           <td><a href="#slide27">27</a></td>
         </tr>
         
-        <tr id="toc-row-28" class="sub">
-          <th><a href="#slide28">Nipype as a brain imaging library</a></th>
-          <td><a href="#slide28">28</a></td>
+      
+      
+      <tr id="toc-row-28">
+        <th><a href="#slide28">Hello nipype!</a></th>
+        <td><a href="#slide28">28</a></td>
+      </tr>
+      
+        
+        <tr id="toc-row-29" class="sub">
+          <th><a href="#slide29">Nipype as a brain imaging library</a></th>
+          <td><a href="#slide29">29</a></td>
         </tr>
         
-      
-      
-      <tr id="toc-row-29">
-        <th><a href="#slide29">Hello world!</a></th>
-        <td><a href="#slide29">29</a></td>
-      </tr>
       
       
       <tr id="toc-row-30">
