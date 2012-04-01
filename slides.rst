@@ -305,7 +305,7 @@ Workflows
 Execution Plugins
 ~~~~~~~~~~~~~~~~~
 
-* allows seamless execution across many architectures
+Allows seamless execution across many architectures
 
   - local
 
@@ -375,41 +375,63 @@ Running Nipype (`Quickstart <http://nipy.org/nipype/quickstart.html>`_):
 For today's tutorial
 ~~~~~~~~~~~~~~~~~~~~
 
-when you type:
-
-    .. sourcecode:: bash
-
-        $ module add nipype-tutorial
-        $ cd $TUTORIAL_DIR
-        $ ipython notebook --pylab=inline
-
-it does the following:
+At MIT you can configure your environment as:
 
     .. sourcecode:: bash
 
         source /software/python/EPD/virtualenvs/7.2/nipype0.5/bin/activate
-        export TUTORIAL_DIR=/mindhive/scratch/$LOGIN/nipype-tutorial
-        mkdir -p $TUTORIAL_DIR
-        cd $TUTORIAL_DIR
+        export TUT_DIR=/mindhive/scratch/mri_class/$LOGNAME/nipype-tutorial
+        mkdir -p $TUT_DIR
+        cd $TUT_DIR
         ln -s /mindhive/xnat/data/nki_test_retest nki
         ln -s /mindhive/xnat/data/openfmri/ds107 ds107
-        ln -s /mindhive/xnat/surfaces/tutorial surfaces
+        ln -s /mindhive/xnat/surfaces/nki_test_retest nki_surfaces
+        ln -s /mindhive/xnat/surfaces/openfmri/ds107 ds107_surfaces
         module add torque
+        export ANTSPATH=/software/ANTS/versions/120325/bin/
+        export PATH=/software/common/bin:$ANTSPATH:$PATH
+        . fss 5.1.0
+        . /etc/fsl/4.1/fsl.sh
+
+For our interactive session we will use IPython:
+
+    .. sourcecode:: bash
+
+        ipython notebook --pylab=inline
 
 ----
 
-Tutorial data
-~~~~~~~~~~~~~
+Tutorial data and subject ids
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* `OpenfMRI test-retest data <http://openfmri.org/dataset/ds000107>`_
+- `OpenfMRI test-retest data <http://openfmri.org/dataset/ds000107>`_
 
-    - subj id1
-    - subj id2
+    - sub001
+    - sub049
 
-* `NKI Test-Retest data <http://fcon_1000.projects.nitrc.org/indi/pro/eNKI_RS_TRT/FrontPage.html>`_
+- `NKI Test-Retest data <http://fcon_1000.projects.nitrc.org/indi/pro/eNKI_RS_TRT/FrontPage.html>`_
 
-    - subj id1
-    - subj id2
+    - 2475376
+    - 0021006
+
+- Surfaces reconstructed with FreeSurfer 5.1 without editing
+
+----
+
+Hello nipype!
+-------------
+
+- Nipype as a library
+- Imperative programming with caching
+- Workflow concepts
+- Hello World! of workflows
+- Data grabbing and sinking
+- Loops: iterables and iterfields
+- The `Function` interface
+- Config options
+- Debugging
+- Distributed computing
+- Actual workflows: preprocessing
 
 ----
 
@@ -437,16 +459,10 @@ Nipype as a brain imaging library
 
 ----
 
-Hello world!
---------------------------------------------------------------------------------
-
-
-----
-
 References
 ----------
 
 .. [1] Poline J, Breeze JL, Ghosh SS, Gorgolewski K, Halchenko YO, Hanke M,
-  Helmer KG, Marcus DS, Poldrack RA, Schwartz Y, Ashburner J and Kennedy DN
-  (2012). Data sharing in neuroimaging research. Front. Neuroinform. 6:9.
-  http://dx.doi.org/10.3389/fninf.2012.00009
+  Haselgrove, C, Helmer KG, Marcus DS, Poldrack RA, Schwartz Y, Ashburner J and
+  Kennedy DN (2012). Data sharing in neuroimaging research. Front. Neuroinform.
+  6:9. http://dx.doi.org/10.3389/fninf.2012.00009
