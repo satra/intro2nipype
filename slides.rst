@@ -435,18 +435,24 @@ Hello nipype!
 
 ----
 
-Nipype as a brain imaging library
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Nipype as a library
+~~~~~~~~~~~~~~~~~~~
+
+Importing functionality
 
 .. sourcecode:: python
 
    >>> from nipype.interfaces.camino import DTIFit
    >>> from nipype.interfaces.spm import Realign
 
+Finding interface inputs and outputs and examples
+
 .. sourcecode:: python
 
    >>> DTIFit.help()
    >>> Realign.help()
+
+Executing the interfaces
 
 .. sourcecode:: python
 
@@ -456,6 +462,174 @@ Nipype as a brain imaging library
 
     >>> aligner = Realign(in_file='A.nii')
     >>> aligner.run()
+
+----
+
+Work in a directory
+~~~~~~~~~~~~~~~~~~~
+
+.. sourcecode:: python
+
+    import os
+    from shutil import copyfile
+    library_dir = os.path.join(os.getenv('TUT_DIR'), 'as_a_library')
+    os.mkdir(library_dir)
+    os.chdir(library_dir)
+
+----
+
+Using interfaces
+~~~~~~~~~~~~~~~~
+
+We will use SPM so convert the file to uncompressed Nifti
+
+.. sourcecode:: python
+
+    from nipype.interfaces.freesurfer import MRIConvert
+    MRIConvert(in_file='../ds107/sub001/BOLD/task001_run001/bold.nii.gz',
+               out_file='ds107.nii').run()
+
+Import the motion-correction interfaces
+
+.. sourcecode:: python
+
+    from nipype.interfaces.spm import Realign
+    from nipype.interfaces.fsl import MCFLIRT
+
+Run SPM first
+
+.. sourcecode:: python
+
+    >>> results1 = Realign(in_files='ds107.nii',
+                           register_to_mean=False).run()
+    >>> ls
+    ds107.mat  ds107.nii  meands107.nii  pyscript_realign.m  rds107.mat
+    rds107.nii  rp_ds107.txt
+
+----
+
+Let's use FSL
+~~~~~~~~~~~~~
+
+but how?
+
+.. sourcecode:: python
+
+    >>> MCFLIRT.help()
+
+Aha!
+
+.. sourcecode:: python
+
+    >>> results2 = MCFLIRT(in_file='ds107.nii', ref_vol=0,
+                           save_plots=True).run()
+
+Now we can look at some results
+
+.. sourcecode:: python
+
+    subplot(211);plot(genfromtxt('ds107_mcf.nii.gz.par')[:, 3:]);
+    title('FSL')
+    subplot(212);plot(genfromtxt('rp_ds107.txt')[:,:3]);title('SPM')
+
+if i execute the MCFLIRT line again, well, it runs again!
+
+----
+
+Using Nipype caching
+~~~~~~~~~~~~~~~~~~~~
+
+Setup
+
+.. sourcecode:: python
+
+    >>> from nipype.caching import Memory
+    >>> mem = Memory('.')
+
+Create `cacheable` objects
+
+.. sourcecode:: python
+
+    >>> spm_realign = mem.cache(Realign)
+    >>> fsl_realign = mem.cache(MCFLIRT)
+
+Execute interfaces
+
+.. sourcecode:: python
+
+    >>> spm_results = spm_realign(in_files='./as_a_library/ds107.nii',
+                                  register_to_mean=False)
+    >>> fsl_results = fsl_realign(in_file='./as_a_library/ds107.nii',
+                                  ref_vol=0, save_plots=True)
+
+Compare
+
+.. sourcecode:: python
+
+    subplot(211);plot(genfromtxt(fsl_results.outputs.par_file)[:, 3:])
+    subplot(212);
+    plot(genfromtxt(spm_results.outputs.realignment_parameters)[:,:3])
+
+----
+
+More caching
+~~~~~~~~~~~~
+
+Execute interfaces again
+
+.. sourcecode:: python
+
+    >>> spm_results = spm_realign(in_files='./as_a_library/ds107.nii',
+                                  register_to_mean=False)
+    >>> fsl_results = fsl_realign(in_file='./as_a_library/ds107.nii',
+                                  ref_vol=0, save_plots=True)
+
+Output
+
+    120401-23:16:21,144 workflow INFO:
+         Executing node 43650b0cabb14ef502659398b944be8b in dir: /mindhive/gablab/satra/mri_class/nipype_mem/nipype-interfaces-spm-preprocess-Realign/43650b0cabb14ef502659398b944be8b
+    120401-23:16:21,145 workflow INFO:
+         Collecting precomputed outputs
+    120401-23:16:21,158 workflow INFO:
+         Executing node e91bcd85558ecd0a2786c9fdd2bcb65a in dir: /mindhive/gablab/satra/mri_class/nipype_mem/nipype-interfaces-fsl-preprocess-MCFLIRT/e91bcd85558ecd0a2786c9fdd2bcb65a
+    120401-23:16:21,159 workflow INFO:
+         Collecting precomputed outputs
+
+----
+
+More files to process
+~~~~~~~~~~~~~~~~~~~~~
+
+what if we had more files?
+
+.. sourcecode:: python
+
+    >>> from os.path import abspath as opap
+    >>> files = [opap('ds107/sub001/BOLD/task001_run001/bold.nii.gz'),
+                 opap('ds107/sub001/BOLD/task001_run002/bold.nii.gz')]
+    >>> spm_results = spm_realign(in_files=files, register_to_mean=False)
+    >>> fsl_results = fsl_realign(in_file=files, ref_vol=0,
+                                  save_plots=True)
+
+With caching one would have to do:
+
+.. sourcecode:: python
+
+    >>> fsl_results = []
+    >>> for fname in files:
+            fsl_results.append(fsl_realign(in_file=fname, ref_vol=0,
+                                           save_plots=True))
+
+----
+
+Workflow concepts
+~~~~~~~~~~~~~~~~~
+
+**Node**:
+
+**Mapnode**:
+
+**Workflow**:
 
 ----
 
