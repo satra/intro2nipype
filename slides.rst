@@ -958,7 +958,9 @@ Function Interface
 Putting it all together
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. image:: images/mapnode.png
+iterables + MapNode + Node + Workflow + DataGrabber + DataSink
+
+.. image:: images/alltogether.png
 
 ----
 
