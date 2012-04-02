@@ -427,11 +427,8 @@ Hello nipype!
 - Hello World! of workflows
 - Data grabbing and sinking
 - Loops: iterables and iterfields
-- The `Function` interface
-- Config options
-- Debugging
-- Distributed computing
-- Actual workflows: preprocessing
+- The `IdentityInterface` and `Function` interfaces
+- Config options, Debugging, Distributed computing
 
 ----
 
@@ -517,7 +514,7 @@ but how?
 
     >>> MCFLIRT.help()
 
-Aha!
+or go to: `MCFLIRT help <http://nipy.sourceforge.net/nipype/interfaces/generated/nipype.interfaces.fsl.preprocess.html#mcflirt>`_
 
 .. sourcecode:: python
 
@@ -607,29 +604,373 @@ what if we had more files?
     >>> from os.path import abspath as opap
     >>> files = [opap('ds107/sub001/BOLD/task001_run001/bold.nii.gz'),
                  opap('ds107/sub001/BOLD/task001_run002/bold.nii.gz')]
-    >>> spm_results = spm_realign(in_files=files, register_to_mean=False)
     >>> fsl_results = fsl_realign(in_file=files, ref_vol=0,
                                   save_plots=True)
+    >>> spm_results = spm_realign(in_files=files, register_to_mean=False)
 
-With caching one would have to do:
+They will both break but for different reasons::
+
+    1. Interface incompatibility
+    2. File format
 
 .. sourcecode:: python
 
-    >>> fsl_results = []
-    >>> for fname in files:
-            fsl_results.append(fsl_realign(in_file=fname, ref_vol=0,
-                                           save_plots=True))
+    converter = mem.cache(MRIConvert)
+    newfiles = []
+    for idx, fname in enumerate(files):
+        newfiles.append(converter(in_file=fname,
+                                  out_type='nii').outputs.out_file)
 
 ----
 
 Workflow concepts
 ~~~~~~~~~~~~~~~~~
 
+Where:
+
+.. sourcecode:: python
+
+    >>> from nipype.pipeline.engine import Node, MapNode, Workflow
+
 **Node**:
+
+.. sourcecode:: python
+
+    >>> spm_realign = mem.cache(Realign)
+    >>> realign_spm = Node(Realign(), name='motion_correct')
 
 **Mapnode**:
 
+.. sourcecode:: python
+
+    >>> realign_fsl = MapNode(MCFLIRT(), iterfield=['in_file'],
+                              name='motion_correct_with_fsl')
+
 **Workflow**:
+
+.. sourcecode:: python
+
+    >>> myflow = Workflow(name='realign')
+    >>> myflow.add_nodes([realign_spm, realign_fsl])
+
+----
+
+Workflow: setting inputs
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Node**:
+
+.. sourcecode:: python
+
+    >>> realign_spm.inputs.in_files = newfiles
+    >>> realign_spm.inputs.register_to_mean = False
+    >>> realign_spm.run()
+
+**Mapnode**:
+
+.. sourcecode:: python
+
+    >>> realign_fsl.inputs.in_file = files
+    >>> realign_fsl.inputs.ref_vol = 0
+    >>> realign_fsl.run()
+
+**Workflow**:
+
+.. sourcecode:: python
+
+    >>> myflow = Workflow(name='realign')
+    >>> myflow.add_nodes([realign_spm, realign_fsl])
+    >>> myflow.base_dir = opap('.')
+    >>> myflow.inputs.motion_correct.in_files = newfiles
+    >>> myflow.inputs.motion_correct.register_to_mean = False
+    >>> myflow.inputs.motion_correct_with_fsl.in_file = files
+    >>> myflow.inputs.motion_correct_with_fsl.ref_vol = 0
+    >>> myflow.run()
+
+----
+
+"Hello World" of Nipype workflows
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Create two nodes:
+
+.. sourcecode:: python
+
+    >>> convert2nii = MapNode(MRIConvert(out_type='nii'),
+                              iterfield=['in_file'],
+                              name='convert2nii')
+    >>> realign_spm = Node(Realign(), name='motion_correct')
+
+Set inputs:
+
+.. sourcecode:: python
+
+    >>> convert2nii.inputs.in_file = files
+    >>> realign_spm.inputs.register_to_mean = False
+
+Connect them up:
+
+.. sourcecode:: python
+
+    >>> realignflow = Workflow(name='realign_with_spm')
+    >>> realignflow.connect(convert2nii, 'out_file',
+                            realign_spm, 'in_files')
+    >>> realignflow.base_dir = opap('.')
+    >>> realignflow.run()
+
+----
+
+Visualize the workflow
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. sourcecode:: python
+
+    >>> realignflow.write_graph()
+
+.. image:: images/graph.dot.png
+
+.. sourcecode:: python
+
+    >>> realignflow.write_graph(graph2use='orig')
+
+.. image:: images/graph_detailed.dot.png
+
+----
+
+Data grabbing
+~~~~~~~~~~~~~
+
+Instead of assigning data ourselves, let's *glob* it
+
+.. sourcecode:: python
+
+    >>> from nipype.interfaces.io import DataGrabber
+    >>> ds = Node(DataGrabber(infields=['subject_id'],
+                              outfields=['func']),
+                  name='datasource')
+    >>> ds.inputs.base_directory = opap('ds107')
+    >>> ds.inputs.template = '%s/BOLD/task001*/bold.nii.gz'
+
+    >>> ds.inputs.subject_id = 'sub001'
+    >>> ds.run().outputs
+    func = ['...mri_class/ds107/sub001/BOLD/task001_run001/bold.nii.gz',
+            '...mri_class/ds107/sub001/BOLD/task001_run002/bold.nii.gz']
+
+    >>> ds.inputs.subject_id = 'sub049'
+    >>> ds.run().outputs
+    func = ['...mri_class/ds107/sub049/BOLD/task001_run001/bold.nii.gz',
+            '...mri_class/ds107/sub049/BOLD/task001_run002/bold.nii.gz']
+
+----
+
+Multiple files
+~~~~~~~~~~~~~~
+
+A little more practical usage
+
+.. sourcecode:: python
+
+    >>> ds = Node(DataGrabber(infields=['subject_id', 'task_id'],
+                              outfields=['func', 'anat']),
+                  name='datasource')
+    >>> ds.inputs.base_directory = opap('ds107')
+    >>> ds.inputs.template = '*'
+    >>> ds.inputs.template_args = {'func': [['subject_id', 'task_id']],
+                                   'anat': [['subject_id']]}
+    >>> ds.inputs.field_template =
+                         {'func': '%s/BOLD/task%03d*/bold.nii.gz',
+                          'anat': '%s/anatomy/highres001.nii.gz'}
+
+    >>> ds.inputs.subject_id = 'sub001'
+    >>> ds.inputs.task_id = 1
+    >>> ds.run().outputs
+    anat = '...mri_class/ds107/sub001/anatomy/highres001.nii.gz'
+    func = ['...mri_class/ds107/sub001/BOLD/task001_run001/bold.nii.gz',
+            '...mri_class/ds107/sub001/BOLD/task001_run002/bold.nii.gz']
+
+----
+
+Loops: iterfield (MapNode)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**MapNode + iterfield**: runs underlying interface several times
+
+.. sourcecode:: python
+
+    >>> convert2nii = MapNode(MRIConvert(out_type='nii'),
+                              iterfield=['in_file'],
+                              name='convert2nii')
+.. image:: images/mapnode.png
+
+
+----
+
+Loops: iterables (subgraph)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Workflow + iterables**: runs subgraph several times, attribute not input
+
+.. sourcecode:: python
+
+    >>> multiworkflow = Workflow(name='iterables')
+    >>> ds.iterables = ('subject_id', ['sub001', 'sub049'])
+    >>> multiworkflow.add_nodes([ds])
+    >>> multiworkflow.run()
+
+.. image:: images/iterables.png
+
+----
+
+Reminder
+~~~~~~~~
+
+.. sourcecode:: python
+
+    >>> convert2nii = MapNode(MRIConvert(out_type='nii'),
+                              iterfield=['in_file'],
+                              name='convert2nii')
+    >>> realign_spm = Node(Realign(), name='motion_correct')
+
+Set inputs:
+
+.. sourcecode:: python
+
+    >>> convert2nii.inputs.in_file = files
+    >>> realign_spm.inputs.register_to_mean = False
+
+Connect them up:
+
+.. sourcecode:: python
+
+    >>> realignflow = Workflow(name='realign_with_spm')
+    >>> realignflow.connect(convert2nii, 'out_file',
+                            realign_spm, 'in_files')
+
+----
+
+Connecting to computation
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. sourcecode:: python
+
+    >>> ds = Node(DataGrabber(infields=['subject_id', 'task_id'],
+                              outfields=['func']),
+                  name='datasource')
+    >>> ds.inputs.base_directory = opap('ds107')
+    >>> ds.inputs.template = '%s/BOLD/task%03d*/bold.nii.gz'
+    >>> ds.inputs.template_args = {'func': [['subject_id', 'task_id']]}
+    >>> ds.inputs.task_id = 1
+    >>> convert2nii = MapNode(MRIConvert(out_type='nii'),
+                              iterfield=['in_file'],
+                              name='convert2nii')
+    >>> realign_spm = Node(Realign(), name='motion_correct')
+    >>> realign_spm.inputs.register_to_mean = False
+
+    >>> connectedworkflow = Workflow(name='connectedtogether')
+    >>> ds.iterables = ('subject_id', ['sub001', 'sub049'])
+    >>> connectedworkflow.connect(ds, 'func', convert2nii, 'in_file')
+    >>> connectedworkflow.connect(convert2nii, 'out_file',
+                                  realign_spm, 'in_files')
+    >>> connectedworkflow.run()
+
+----
+
+Data sinking
+~~~~~~~~~~~~
+
+Take output computed in a workflow out of it.
+
+.. sourcecode:: python
+
+    >>> sinker = Node(DataSink(), name='sinker')
+    >>> sinker.inputs.base_directory = opap('output')
+    >>> connectedworkflow.connect(realign_spm, 'realigned_files',
+                                  sinker, 'realigned')
+    >>> connectedworkflow.connect(realign_spm, 'realignment_parameters',
+                                  sinker, 'realigned.@parameters')
+
+How to determine output location::
+
+    'base_directory/container/parameterization/destloc/filename'
+
+    destloc = string[[.[@]]string[[.[@]]string]] and
+    filename comes from the input to the connect statement.
+
+----
+
+Two utility interfaces
+~~~~~~~~~~~~~~~~~~~~~~
+
+#. IdentityInterface: Whatever comes in goes out
+#. Function: The do anything you want card
+
+----
+
+IdentityInterface
+~~~~~~~~~~~~~~~~~
+
+.. sourcecode:: python
+
+    >>> from nipype.interfaces.utility import IdentityInterface
+    >>> subject_id = Node(IdentityInterface(fields=['subject_id']),
+                          name='subject_id')
+    >>> subject_id.iterables = ('subject_id', [0, 1, 2, 3])
+
+or my usual test mode
+
+.. sourcecode:: python
+
+    >>> subject_id.iterables = ('subject_id', subjects[:1])
+
+or
+
+.. sourcecode:: python
+
+    >>> subject_id.iterables = ('subject_id', subjects[:10])
+
+----
+
+Function Interface
+~~~~~~~~~~~~~~~~~~
+
+.. sourcecode:: python
+
+    >>> from nipype.interfaces.utility import Function
+
+    >>> def myfunc(input1, input2):
+            """Add and subtract two inputs
+            """
+            return input1 + input2, input1 - input2
+
+    >>> calcfunc = Node(Function(input_names=['input1', 'input2'],
+                                 output_names = ['sum', 'difference'],
+                                 function=myfunc),
+                        name='mycalc')
+    >>> calcfunc.inputs.input1 = 1
+    >>> calcfunc.inputs.input2 = 2
+    >>> res = calcfunc.run()
+    >>> res.outputs
+    sum = 3
+    difference = -1
+
+----
+
+Putting it all together
+~~~~~~~~~~~~~~~~~~~~~~~
+
+iterables + MapNode + Node + Workflow + DataGrabber + DataSink
+
+.. image:: images/alltogether.png
+
+----
+
+Miscellaneous topics
+~~~~~~~~~~~~~~~~~~~~
+
+#. Config options: controlling behavior
+#. Debugging
+#. Distributed computing
+#. Reusing workflows
 
 ----
 
