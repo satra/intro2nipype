@@ -967,10 +967,37 @@ iterables + MapNode + Node + Workflow + DataGrabber + DataSink
 Miscellaneous topics
 ~~~~~~~~~~~~~~~~~~~~
 
-#. Config options: controlling behavior
-#. Debugging
-#. Distributed computing
-#. Reusing workflows
+1. Distributed computing
+
+.. sourcecode:: python
+
+    >>> connectedworkflow.run('MultiProc', plugin_args={'n_procs': 4})
+    >>> connectedworkflow.run('PBS', plugin_args={'qsub_args': '-q many'})
+
+2. Config options: controlling behavior
+
+.. sourcecode:: python
+
+    >>> from nipype import config, logging
+
+    >>> config.set_debug_mode()
+    >>> logging.update_logging()
+
+    >>> config.set('execution', 'keep_unnecessary_outputs', 'true')
+
+3. `Debugging recommendations <http://nipy.sourceforge.net/nipype/users/debug.html>`_
+
+4. Reusing workflows
+
+----
+
+Where to go from here
+---------------------
+
+`Nipype website <http://nipy.org/nipype>`_
+
+* Quickstart
+* Links on the right (connects with mailing lists)
 
 ----
 
