@@ -1106,6 +1106,7 @@ Databases
            for fname in central_list:
                if fname.endswith('img'):
                    return fname
+
 ----
 
 Miscellaneous topics
