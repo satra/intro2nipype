@@ -15,6 +15,8 @@
 
 satra@mit.edu
 
+http://satra.github.com/intro2nipype
+
 `CREDITS <https://github.com/nipy/nipype/blob/master/THANKS>`_
 
 .. raw:: html
@@ -27,11 +29,12 @@ satra@mit.edu
 What we will cover today
 ------------------------
 
-- overview of Nipype
-- semantics of Nipype
-- playing with interfaces
-- creating workflows
-- writing functions
+- Overview of Nipype
+- Semantics of Nipype
+- Playing with interfaces
+- Creating workflows
+- Advanced features
+- Future directions
 
 ----
 
@@ -93,15 +96,21 @@ developer:
 
 ----
 
-... and issues
-~~~~~~~~~~~~~~
+... and more questions
+~~~~~~~~~~~~~~~~~~~~~~
 
-- Installing, using, maintaining and testing multiple packages
-- Reducing manual intervention
-- Training people
-- Tailoring to specific projects
-- Developing new tools
-- Reproducing results
+.. list-table::
+
+  * - How do we:
+
+        - Install, use, maintain and test multiple packages
+        - Reduce manual intervention
+        - Train people
+        - Tailor to specific projects
+        - Develop new tools
+        - Perform reproducible research
+
+    - .. image:: images/fmri.png
 
 ----
 
@@ -125,6 +134,7 @@ Solution requirements
 Coming at it from a developer's perspective, we needed something
 
 - lightweight
+- scriptable
 - provided formal, common semantics
 - allowed interactive exploration
 - supported efficient batch processing
@@ -168,13 +178,16 @@ We built Nipype in Python
 Why Python?
 -----------
 
-* easy to program and document
+* easy to learn
+* coding style makes for easy readability
 * cross-platform
 * extensive infrastructure for
 
  - development and distribution
  - scientific computing
  - brain imaging
+
+* several institutions are adopting it in computer science classes
 
 ----
 
@@ -229,8 +242,8 @@ What is Nipype?
 
 ----
 
-Nipype architecture
-~~~~~~~~~~~~~~~~~~~
+Nipype architecture [2]_
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 * Interface
 * Engine
@@ -241,17 +254,36 @@ Nipype architecture
 
 ----
 
+Semantics: Interface
+~~~~~~~~~~~~~~~~~~~~
+
+* **Interface**: Wraps a program or function
+
+.. image:: images/arch.png
+   :scale: 70%
+
+----
+
+Semantics: Engine
+~~~~~~~~~~~~~~~~~
+
+- **Node/MapNode**: Wraps an `Interface` for use in a Workflow that provides
+  caching and other goodies (e.g., pseudo-sandbox)
+- **Workflow**: A *graph* or *forest of graphs* whose nodes are of type `Node`,
+  `MapNode` or `Workflow` and whose edges represent data flow
+
+.. image:: images/arch.png
+   :scale: 60%
+
+----
+
 Semantics
 ~~~~~~~~~
 
-* **Interface**: Wraps a program or function
-* Engine
-
-    - **Node/MapNode**: Wraps an `Interface` for use in a Workflow that provides
-      caching and other goodies (e.g., pseudo-sandbox)
-    - **Workflow**: A *graph* or *forest of graphs* whose nodes are of type `Node`,
-      `MapNode` or `Workflow` and whose edges represent data flow
 * **Plugin**: A component that describes how a `Workflow` should be executed
+
+.. image:: images/arch.png
+   :scale: 70%
 
 ----
 
@@ -279,9 +311,9 @@ Currently supported (4-2-2012). `Click here for latest <http://www.mit.edu/~satr
   * - `Slicer <http://www.slicer.org>`_
     - `SPM <http://www.fil.ion.ucl.ac.uk/spm>`_
 
-.. attention:: Most used/contributed policy!
+Most used/contributed policy!
 
-   Not every component of these packages are available.
+Not every component of these packages are available.
 
 ----
 
@@ -475,16 +507,30 @@ Work in a directory
 
 ----
 
-Using interfaces
-~~~~~~~~~~~~~~~~
+Using interfaces: comparison
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We will use SPM so convert the file to uncompressed Nifti
+We will use FreeSurfer to convert the file to uncompressed Nifti
 
 .. sourcecode:: python
 
     from nipype.interfaces.freesurfer import MRIConvert
     MRIConvert(in_file='../ds107/sub001/BOLD/task001_run001/bold.nii.gz',
                out_file='ds107.nii').run()
+
+Normally:
+
+.. sourcecode:: shell
+
+   $ mri_convert ../ds107/sub001/BOLD/task001_run001/bold.nii.gz
+          ds107.nii
+
+**Shell script wins!**
+
+----
+
+Using interfaces: more Interfaces
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Import the motion-correction interfaces
 
@@ -502,6 +548,14 @@ Run SPM first
     >>> ls
     ds107.mat  ds107.nii  meands107.nii  pyscript_realign.m  rds107.mat
     rds107.nii  rp_ds107.txt
+
+
+Shell script goes into hiding. Of course it could do ;)
+
+.. sourcecode:: shell
+
+   $ python -c "from nipype.interfaces.spm import Realign;
+                Realign(...).run()"
 
 ----
 
@@ -655,8 +709,8 @@ Where:
 
 ----
 
-Workflow: setting inputs
-~~~~~~~~~~~~~~~~~~~~~~~~
+Workflow: set inputs and run
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Node**:
 
@@ -673,6 +727,20 @@ Workflow: setting inputs
     >>> realign_fsl.inputs.in_file = files
     >>> realign_fsl.inputs.ref_vol = 0
     >>> realign_fsl.run()
+
+**Workflow**:
+
+.. sourcecode:: python
+
+    >>> myflow = Workflow(name='realign')
+    >>> myflow.add_nodes([realign_spm, realign_fsl])
+    >>> myflow.base_dir = opap('.')
+    >>> myflow.run()
+
+----
+
+Workflow: setting inputs
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Workflow**:
 
@@ -898,6 +966,15 @@ How to determine output location::
 
 ----
 
+Putting it all together
+~~~~~~~~~~~~~~~~~~~~~~~
+
+iterables + MapNode + Node + Workflow + DataGrabber + DataSink
+
+.. image:: images/alltogether.png
+
+----
+
 Two utility interfaces
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -933,6 +1010,8 @@ or
 Function Interface
 ~~~~~~~~~~~~~~~~~~
 
+Do anything you want in Nipype card!
+
 .. sourcecode:: python
 
     >>> from nipype.interfaces.utility import Function
@@ -955,26 +1034,85 @@ Function Interface
 
 ----
 
-Putting it all together
-~~~~~~~~~~~~~~~~~~~~~~~
+Distributed computing
+~~~~~~~~~~~~~~~~~~~~~
 
-iterables + MapNode + Node + Workflow + DataGrabber + DataSink
+Normally calling run executes the workflow in series
 
-.. image:: images/alltogether.png
+.. sourcecode:: python
 
-----
+    >>> connectedworkflow.run()
 
-Miscellaneous topics
-~~~~~~~~~~~~~~~~~~~~
-
-1. Distributed computing
+but you can scale to a cluster very easily
 
 .. sourcecode:: python
 
     >>> connectedworkflow.run('MultiProc', plugin_args={'n_procs': 4})
     >>> connectedworkflow.run('PBS', plugin_args={'qsub_args': '-q many'})
+    >>> connectedworkflow.run('SGE', plugin_args={'qsub_args': '-q many'})
+    >>> connectedworkflow.run('Condor',
+                               plugin_args={'qsub_args': '-q many'})
+    >>> connectedworkflow.run('IPython')
 
-2. Config options: controlling behavior
+**Requirement: shared filesystem**
+
+where art thou shell script?
+
+----
+
+Databases
+~~~~~~~~~
+
+.. sourcecode:: python
+
+   >>> from nipype.interfaces.io import XNATSource
+   >>> from nipype.pipeline.engine import Node, Workflow
+   >>> from nipype.interfaces.fsl import BET
+
+   >>> dg = Node(XNATSource(infields=['subject_id', 'mpr_id'],
+                            outfields=['struct'],
+                            config='/Users/satra/xnatconfig'),
+                 name='xnatsource')
+   >>> dg.inputs.query_template = ('/projects/CENTRAL_OASIS_CS/subjects/'
+                                   '%s/experiments/%s_MR1/scans/mpr-%d/'
+                                   'resources/files')
+   >>> dg.inputs.query_template_args['struct'] = [['subject_id',
+                                                   'subject_id',
+                                                   'mpr_id']]
+   >>> dg.inputs.subject_id = 'OAS1_0002'
+   >>> dg.inputs.mpr_id = 1
+
+   >>> bet = Node(BET(), name='skull_stripper')
+   >>> wf = Workflow(name='testxnat')
+   >>> wf.base_dir = '/software/temp/xnattest'
+   >>> wf.connect(dg, ('struct', select_img), bet, 'in_file')
+
+----
+
+Databases
+~~~~~~~~~
+
+.. sourcecode:: python
+
+    ['/var/.../c67d371..._OAS1_0002_MR1_mpr-1_anon.img',
+     '/var/.../c67d371..._OAS1_0002_MR1_mpr-1_anon.hdr',
+     '/var/.../c67d371..._OAS1_0002_MR1_mpr-1_anon_sag_66.gif']
+
+.. sourcecode:: python
+
+   >>> wf.connect(dg, ('struct', select_img), bet, 'in_file')
+
+   >>> def select_img(central_list):
+           for fname in central_list:
+               if fname.endswith('img'):
+                   return fname
+----
+
+Miscellaneous topics
+~~~~~~~~~~~~~~~~~~~~
+
+
+1. Config options: controlling behavior
 
 .. sourcecode:: python
 
@@ -985,9 +1123,19 @@ Miscellaneous topics
 
     >>> config.set('execution', 'keep_unnecessary_outputs', 'true')
 
-3. `Debugging recommendations <http://nipy.sourceforge.net/nipype/users/debug.html>`_
+2. Reusing workflows
 
-4. Reusing workflows
+.. sourcecode:: python
+
+    >>> from nipype.workflows.smri.freesurfer.utils import
+              create_getmask_flow
+
+    >>> getmask = create_getmask_flow()
+    >>> getmask.inputs.inputspec.source_file = 'mean.nii'
+    >>> getmask.inputs.inputspec.subject_id = 's1'
+    >>> getmask.inputs.inputspec.subjects_dir = '.'
+    >>> getmask.inputs.inputspec.contrast_type = 't2'
+    >>> getmask.run()
 
 ----
 
@@ -998,6 +1146,26 @@ Where to go from here
 
 * Quickstart
 * Links on the right (connects with mailing lists)
+* `Debugging recommendations <http://nipy.sourceforge.net/nipype/users/debug.html>`_
+
+----
+
+Future Directions
+-----------------
+
+* Reproducible research (standards)
+
+  - `BIPS <http://github.com/INCF/BrainImagingPipelines>`_
+  - `Provenance <http://github.com/INCF/ProvenanceLibrary>`_
+
+* Scalability
+
+  - AWS
+  - Graph submission with depth first order
+
+* Social collaboration and workflow development
+
+  - Google docs for scientific workflows
 
 ----
 
@@ -1008,3 +1176,9 @@ References
   Haselgrove, C, Helmer KG, Marcus DS, Poldrack RA, Schwartz Y, Ashburner J and
   Kennedy DN (2012). Data sharing in neuroimaging research. Front. Neuroinform.
   6:9. http://dx.doi.org/10.3389/fninf.2012.00009
+
+
+.. [2] Gorgolewski K, Burns CD, Madison C, Clark D, Halchenko YO, Waskom ML,
+  Ghosh SS (2011) Nipype: a flexible, lightweight and extensible neuroimaging
+  data processing framework in Python. Front. Neuroinform. 5:13.
+  http://dx.doi.org/10.3389/fninf.2011.00013
